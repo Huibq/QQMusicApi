@@ -4,7 +4,7 @@
 class ApiException(Exception):
     """API Exception 基类"""
 
-    def __init__(self, message: str = "出现了错误，但未说明原因") -> None:
+    def __init__(self, message: str = "出现了错误,但未说明原因") -> None:
         super().__init__(message)
         self.message = message
 
@@ -58,3 +58,10 @@ class LoginError(ApiException):
 
     def __init__(self, message: str = "登录失败") -> None:
         super().__init__(message)
+
+
+class SignInvalidError(ResponseCodeError):
+    """请求签名无效"""
+
+    def __init__(self, data: dict, message: str = "请求签名无效") -> None:
+        super().__init__(2000, message=message, data=data, raw={})

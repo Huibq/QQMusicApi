@@ -1,5 +1,5 @@
-from qqmusic_api.utils.qimei import QIMEI
+from qqmusic_api.utils.qimei import get_qimei
 
 
 def test_get_qimei():
-    QIMEI.get_qimei("13.2.5.8")
+    get_qimei("13.2.5.8")

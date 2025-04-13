@@ -1,10 +1,16 @@
-"""凭据类，用于请求验证"""
+"""凭据类,用于请求验证"""
 
-import json
+import sys
 from dataclasses import asdict, dataclass, field
+from time import time
 from typing import Any
 
-from typing_extensions import Self
+import orjson as json
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 from ..exceptions import CredentialInvalidError
 
@@ -68,33 +74,25 @@ class Credential:
             raise CredentialInvalidError("没有提供 musickey")
 
     async def refresh(self) -> bool:
-        """刷新 cookies
-
-        Returns:
-            是否刷新成功
-        """
+        """刷新 cookies"""
         from ..login import refresh_cookies
 
-        c = await refresh_cookies(self)
-        if c == self:
-            return False
-        self.__dict__.update(c.__dict__)
-        return True
+        return await refresh_cookies(self)
 
     async def can_refresh(self) -> bool:
         """是否可以刷新 credential"""
         if not self.has_musicid() or not self.has_musickey():
             return False
         if await self.is_expired():
-            return bool(self.refresh_key) and bool(self.refresh_token)
+            return bool(self.refresh_key)
         return True
 
     async def is_expired(self) -> bool:
-        """判断 credential 是否过期
+        """判断 credential 是否过期"""
+        if "musickeyCreateTime" in self.extra_fields and "keyExpiresIn" in self.extra_fields:
+            expired_time_stamp = self.extra_fields["musickeyCreateTime"] + self.extra_fields["keyExpiresIn"]
+            return expired_time_stamp <= time()
 
-        Returns:
-            是否过期
-        """
         from ..login import check_expired
 
         return await check_expired(self)
@@ -110,24 +108,17 @@ class Credential:
         """获取凭据 JSON 字符串"""
         data = self.as_dict()
         data.update(data.pop("extra_fields"))
-        return json.dumps(data, indent=4, ensure_ascii=False)
+        return json.dumps(data).decode()
 
     @classmethod
     def from_cookies_dict(cls, cookies: dict[str, Any]) -> Self:
-        """从 cookies 字典创建 Credential 实例
-
-        Args:
-            cookies: Cookies 字典
-
-        Returns:
-            凭据类实例
-        """
+        """从 cookies 字典创建 Credential 实例"""
         return cls(
             openid=cookies.pop("openid", ""),
             refresh_token=cookies.pop("refresh_token", ""),
             access_token=cookies.pop("access_token", ""),
             expired_at=cookies.pop("expired_at", 0),
-            musicid=cookies.pop("musicid", 0),
+            musicid=int(cookies.pop("musicid", 0)),
             musickey=cookies.pop("musickey", ""),
             unionid=cookies.pop("unionid", ""),
             str_musicid=cookies.pop(
@@ -139,3 +130,8 @@ class Credential:
             login_type=cookies.pop("loginType", 0),
             extra_fields=cookies,
         )
+
+    @classmethod
+    def from_cookies_str(cls, cookies: str) -> Self:
+        """从 cookies 字符串创建 Credential 实例"""
+        return cls.from_cookies_dict(json.loads(cookies))

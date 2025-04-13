@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - "main"
+    paths:
+     - "qqmusic_api/**"
+     - "tests/**"
+
+  pull_request:
 
   schedule:
     - cron: "0 6 * * *"
@@ -13,26 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: true
-      - name: Install dependencies
-        run: |
-          pdm sync -dG testing
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install
+      - name: Install the project
+        run: uv sync --group testing
       - name: Run tests
-        env:
-          MUSIC_ID: ${{ secrets.MUSIC_ID }}
-          MUSIC_KEY: ${{ secrets.MUSIC_KEY }}
-          MUSIC_EUIN: ${{ secrets.MUSIC_EUIN }}
-          MUSIC_REFRESH_KEY: ${{ secrets.MUSIC_REFRESH_KEY }}
-          MUSIC_REFRESH_TOKEN: ${{ secrets.MUSIC_REFRESH_TOKEN }}
-        run: |
-          pdm run pytest
-      - name: Update MUSIC_KEY
-        if: ${{ env.NEW_MUSIC_KEY != '' }}
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          gh secret set MUSIC_KEY -b $NEW_MUSIC_KEY
+        run: uv run pytest

@@ -1,31 +1,24 @@
 """实用函数"""
 
-import json
-import os
+import hashlib
 import random
 import time
 import zlib
-from typing import Union
 
 from .tripledes import DECRYPT, tripledes_crypt, tripledes_key_setup
 
 
-def get_api(field: str) -> dict:
-    """获取 api 字典
-
-    Args:
-        field: 字段名
-
-    Returns:
-        api 字典
-    """
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "api", f"{field.lower()}.json"))
-    if os.path.exists(path):
-        with open(path, encoding="utf8") as f:
-            data = json.load(f)
-            return data
-    else:
-        return {}
+def calc_md5(*strings: str | bytes) -> str:
+    """计算 MD5 值"""
+    md5 = hashlib.md5()
+    for item in strings:
+        if isinstance(item, bytes):
+            md5.update(item)
+        elif isinstance(item, str):
+            md5.update(item.encode())
+        else:
+            raise ValueError(f"Unsupported type: {type(item)}")
+    return md5.hexdigest()
 
 
 def get_guid() -> str:
@@ -65,7 +58,7 @@ def get_searchID() -> str:
     return str(t + n + r)
 
 
-def qrc_decrypt(encrypted_qrc: Union[str, bytearray, bytes]) -> str:
+def qrc_decrypt(encrypted_qrc: str | bytearray | bytes) -> str:
     """QRC 解码
 
     Args:
@@ -83,7 +76,7 @@ def qrc_decrypt(encrypted_qrc: Union[str, bytearray, bytes]) -> str:
     # 将输入转为 bytearray 格式
     if isinstance(encrypted_qrc, str):
         encrypted_qrc = bytearray.fromhex(encrypted_qrc)
-    elif isinstance(encrypted_qrc, (bytearray, bytes)):
+    elif isinstance(encrypted_qrc, bytearray | bytes):
         encrypted_qrc = bytearray(encrypted_qrc)
     else:
         raise ValueError("无效的加密数据类型")
@@ -97,8 +90,7 @@ def qrc_decrypt(encrypted_qrc: Union[str, bytearray, bytes]) -> str:
         for i in range(0, len(encrypted_qrc), 8):
             data += tripledes_crypt(encrypted_qrc[i : i + 8], schedule)
 
-        decrypted_qrc = zlib.decompress(data).decode("utf-8")
-        return decrypted_qrc
+        return zlib.decompress(data).decode("utf-8")
 
     except Exception as e:
         raise ValueError(f"解密失败: {e}")
