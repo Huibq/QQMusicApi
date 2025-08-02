@@ -5,7 +5,7 @@ authors = [
   { name = "Luren", email = "68656403+luren-dc@users.noreply.github.com" },
 ]
 dependencies = [
-  "cryptography>=44.0.1,<44.0.2",
+  "cryptography>=45.0.5,<45.0.6",
   "typing-extensions>=4.12.2",
   "httpx[http2]>=0.27.0",
   "aiocache>=0.12.3",
@@ -60,7 +60,7 @@ include = ["/qqmusic_api", "/tests", "LISENCE", "README.md"]
 [dependency-groups]
 testing = [
   "pytest<9.0.0,>=8.2.0",
-  "pytest-asyncio<1.0.0,>=0.23.6",
+  "pytest-asyncio<1.1.0,>=1.0.0",
   "pytest-sugar<2.0.0,>=1.0.0",
 ]
 docs = [
